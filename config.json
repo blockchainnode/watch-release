@@ -1,0 +1,7 @@
+{
+    "dbPath": "data",
+    "period": 7200,
+    "retryInterval": 30,
+    "alert": [],
+    "repoList": []
+}

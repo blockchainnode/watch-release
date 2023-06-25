@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  watch-release:
+    container_name: watch-release
+    restart: on-failure
+    image: masayil/watch-release:latest
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+    command: >
+      /app/watch-release server -c config.json
+    networks:
+      - watch-release
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+networks:
+  watch-release:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
