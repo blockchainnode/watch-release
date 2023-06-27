@@ -1,7 +1,10 @@
 {
     "dbPath": "data",
-    "period": 7200,
-    "retryInterval": 30,
-    "alert": [],
+    "period": 60,
+    "retryInterval": 10,
+    "alert": {
+        "slack": {},
+        "wechat": {}
+    },
     "repoList": []
 }

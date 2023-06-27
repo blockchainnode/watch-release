@@ -1,7 +1,8 @@
 FROM rust:1.70.0 as builder
 
 WORKDIR /app
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
 RUN cargo build --release --locked
 
 # Copy the project to a target independent location. This will be used by the Runtime image
