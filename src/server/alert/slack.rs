@@ -1,7 +1,7 @@
 use crate::db::Release;
 use anyhow::anyhow;
 use bytes::Bytes;
-use log::info;
+use log::trace;
 use reqwest::header::{self, HeaderMap};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -72,7 +72,7 @@ impl AlertProvider {
             type_alias: "header".to_string(),
             text: SlackNoticeText {
                 type_alias: "plain_text".to_string(),
-                text: "Block chain version updated".to_string(),
+                text: "New Github Release Version".to_string(),
             },
         };
         let attachment = SlackNoticeAttachment {
@@ -84,7 +84,7 @@ impl AlertProvider {
         };
 
         let tmp = json!(slack_notice).to_string();
-        info!("json: {}", tmp);
+        trace!("slack json content: {}", tmp);
         Bytes::from(tmp)
     }
 }

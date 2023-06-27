@@ -1,7 +1,7 @@
 use crate::db::Release;
 use anyhow::anyhow;
 use bytes::Bytes;
-use log::info;
+use log::trace;
 use reqwest::header::{self, HeaderMap};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -54,20 +54,20 @@ impl AlertProvider {
 
     fn build_http_body(release: Release) -> Bytes {
         let msg = format!(
-            "**<font color=\"warning\">Block chain version updated</font>**\n> name: <font color=\"warning\">{}</font> \n> tag: <font color=\"warning\">{}</font> \n> release_name: <font color=\"warning\">{}</font> \n> published_at: <font color=\"warning\">{}</font> \n> url: <font color=\"warning\">{}</font> \n",
+            "**<font color=\"warning\">New Github Release Version</font>**\n> name: <font color=\"info\">{}</font>\n> tag: <font color=\"info\">{}</font>\n> release_name: <font color=\"info\">{}</font>\n> published_at: <font color=\"info\">{}</font>\n> url: <font color=\"info\">{}</font>",
             release.name,
             release.detail.tag_name,
             release.detail.release_name,
             release.detail.published_at,
-            release.url
+            release.detail.html_url,
         );
         let wx_data = WxData {
-            msg_type: "markdown".to_string(),
+            msgtype: "markdown".to_string(),
             markdown: WxMarkdwon { content: msg },
         };
 
         let tmp = json!(wx_data).to_string();
-        info!("json: {}", tmp);
+        trace!("wechat json content: {}", tmp);
         Bytes::from(tmp)
     }
 }
@@ -75,7 +75,7 @@ impl AlertProvider {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct WxData {
     markdown: WxMarkdwon,
-    msg_type: String,
+    msgtype: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
