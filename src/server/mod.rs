@@ -1,14 +1,13 @@
 pub mod alert;
 pub mod watch;
 use crate::config;
+use crate::shutdown::Shutdown;
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
 use log::info;
 use microkv::MicroKV;
 use std::path::PathBuf;
-use tokio::sync::mpsc::Sender;
-
-use crate::shutdown::Shutdown;
+use tokio::sync::mpsc::{self, Sender};
 
 #[derive(Args)]
 pub struct Command {
@@ -53,23 +52,39 @@ pub async fn execute(
     server_config: config::ServerConfig,
     notify_shutdown_watch: Shutdown,
     shutdown_complete_tx_watch: Sender<()>,
-    _notify_shutdown_alert: Shutdown,
-    _shutdown_complete_tx_alert: Sender<()>,
+    notify_shutdown_alert: Shutdown,
+    shutdown_complete_tx_alert: Sender<()>,
 ) -> Result<()> {
     let db = MicroKV::open_with_base_path("github-release", server_config.db_path.clone())
         .context("Failed to create MicroKV from a stored file or create MicroKV for this file")?
         .set_auto_commit(true);
 
-    let watch = watch::do_watch(
-        server_config.period,
-        server_config.retry_interval,
-        server_config.repo_list.clone(),
-        db.clone(),
-        notify_shutdown_watch,
-        shutdown_complete_tx_watch,
-    );
+    let (release_tx, release_rx) = mpsc::channel(32);
 
-    tokio::join!(watch);
+    let watch = tokio::spawn(async move {
+        watch::do_watch(
+            server_config.period,
+            server_config.retry_interval,
+            server_config.repo_list.clone(),
+            db.clone(),
+            notify_shutdown_watch,
+            shutdown_complete_tx_watch,
+            release_tx,
+        )
+        .await;
+    });
+
+    let alert = tokio::spawn(async move {
+        alert::do_alert(
+            server_config.alert.clone(),
+            notify_shutdown_alert,
+            shutdown_complete_tx_alert,
+            release_rx,
+        )
+        .await;
+    });
+
+    let (_, _) = tokio::join!(alert, watch);
 
     Ok(())
 }

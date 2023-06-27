@@ -1,19 +1,21 @@
 use microkv::MicroKV;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Release {
     pub url: String,
     pub name: String,
     pub detail: ReleaseDetail,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct ReleaseDetail {
     #[serde(rename = "name")]
     pub release_name: String,
+    pub tag_name: String,
     pub prerelease: bool,
     pub published_at: String,
+    pub html_url: String,
 }
 
 pub enum KeyFlag {
