@@ -2,7 +2,6 @@ use crate::server;
 use crate::shutdown::run_until_ctrl_c;
 use anyhow::Result;
 use chrono::offset::Local;
-use chrono::DateTime;
 use clap::{Parser, Subcommand};
 use env_logger::{Builder, Env};
 use std::io::Write;
@@ -26,7 +25,6 @@ pub fn init_log() {
         .default_filter_or("info");
     Builder::from_env(env)
         .format(|buf, record| {
-            let local: DateTime<Local> = Local::now();
             let file = record.file().unwrap_or("unknown caller file.");
             // 0 = unable to get the line number in file
             let line = record.line().unwrap_or(0);
@@ -34,7 +32,7 @@ pub fn init_log() {
                 buf,
                 "{} [{}] [caller:\"{}:{}\"] {}",
                 record.level(),
-                local.format("%Y-%m-%d %H:%M:%S%.6f"),
+                Local::now().format("%Y-%m-%d %H:%M:%S%.6f"),
                 file,
                 line,
                 record.args()
