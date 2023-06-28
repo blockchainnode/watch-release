@@ -118,7 +118,7 @@ pub async fn do_watch(
 
 async fn try_watch(puller_list: PullerList, period: u64, release_tx: Sender<Release>) {
     let mut spawn_queue = Vec::new();
-    let semaphore = Arc::new(Semaphore::new(16));
+    let semaphore = Arc::new(Semaphore::new(8));
     for mut v in puller_list.into_iter() {
         if semaphore.acquire().await.is_ok() {
             let release_tx = release_tx.clone();
