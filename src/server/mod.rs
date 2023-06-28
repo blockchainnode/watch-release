@@ -38,11 +38,11 @@ impl Command {
         info!("start watching the github repo releases");
         info!("use config file: {}", self.config_file.display());
         let server_config = config::parse_config(&self.config_file)?;
-        let log_json_config_tmp = serde_json::to_string(&server_config)?;
-        info!(
-            "complete to parse the config file. The content is {}",
-            log_json_config_tmp
-        );
+        // let log_json_config_tmp = serde_json::to_string(&server_config)?;
+        // info!(
+        //     "complete to parse the config file. The content is {}",
+        //     log_json_config_tmp
+        // );
 
         Ok(server_config)
     }
