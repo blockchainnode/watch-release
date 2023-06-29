@@ -63,7 +63,7 @@ pub async fn run_until_ctrl_c(command: Command) -> Result<()> {
             )
             .await;
             if let Err(e) = res {
-                error!("open db failed. Error: {}", e);
+                error!("Error: {}", e);
                 process::exit(2);
             }
         });
@@ -92,7 +92,7 @@ pub async fn run_until_ctrl_c(command: Command) -> Result<()> {
             )
             .await;
             if let Err(e) = res {
-                error!("open db failed. Error: {}", e);
+                error!("Error: {}", e);
                 process::exit(2);
             }
         });

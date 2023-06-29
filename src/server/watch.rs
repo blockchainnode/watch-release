@@ -1,4 +1,3 @@
-use super::build_header;
 use crate::config::{Repo, RETRY};
 use crate::db::{key_in_db_status, KeyFlag, Release, ReleaseDetail};
 use crate::shutdown::Shutdown;
@@ -95,7 +94,7 @@ impl Puller {
 }
 
 pub async fn do_watch(
-    token: String,
+    headers: HeaderMap,
     period: u64,
     retry_interval: u64,
     repo_list: Vec<Repo>,
@@ -104,7 +103,6 @@ pub async fn do_watch(
     _shutdown_complete_tx_watch: Sender<()>,
     release_tx: Sender<Release>,
 ) {
-    let headers = build_header(token);
     let mut puller_list = PullerList::new();
     for v in repo_list.into_iter() {
         puller_list.push(Puller::new(db.clone(), retry_interval, v, 1));
