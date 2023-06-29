@@ -4,10 +4,10 @@ use crate::config;
 use crate::shutdown::Shutdown;
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
-use log::{error, info};
+use log::info;
 use microkv::MicroKV;
-use reqwest::header::{self, HeaderMap};
-use std::{path::PathBuf, process};
+use reqwest::header::{self, HeaderMap, HeaderValue};
+use std::path::PathBuf;
 use tokio::sync::mpsc::{self, Sender};
 
 #[derive(Args)]
@@ -60,11 +60,12 @@ pub async fn execute(
         .context("Failed to create MicroKV from a stored file or create MicroKV for this file")?
         .set_auto_commit(true);
 
+    let headers = build_header(server_config.github_authorization_header)?;
     let (release_tx, release_rx) = mpsc::channel(32);
 
     let watch = tokio::spawn(async move {
         watch::do_watch(
-            server_config.github_authorization_header,
+            headers,
             server_config.period,
             server_config.retry_interval,
             server_config.repo_list.clone(),
@@ -91,23 +92,20 @@ pub async fn execute(
     Ok(())
 }
 
-fn build_header(token: String) -> HeaderMap {
+fn build_header(token: String) -> Result<HeaderMap> {
+    let header_value = token
+        .parse::<HeaderValue>()
+        .context("cannot parse the given token to header value")?;
     let mut headers = HeaderMap::new();
     headers.insert(
         "X-GitHub-Api-Version",
         header::HeaderValue::from_static("2022-11-28"),
     );
     headers.insert(
-        "Accept",
+        header::ACCEPT,
         header::HeaderValue::from_static("application/vnd.github+json"),
     );
-    headers.insert(
-        "Authorization",
-        token.parse().unwrap_or_else(|e| {
-            error!("cannot parse given token to http header value. {}", e);
-            process::exit(3);
-        }),
-    );
+    headers.insert(header::AUTHORIZATION, header_value);
 
-    headers
+    Ok(headers)
 }
