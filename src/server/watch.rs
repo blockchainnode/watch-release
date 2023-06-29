@@ -1,9 +1,11 @@
+use super::build_header;
 use crate::config::{Repo, RETRY};
 use crate::db::{key_in_db_status, KeyFlag, Release, ReleaseDetail};
 use crate::shutdown::Shutdown;
 use anyhow::{anyhow, Context, Result};
 use log::{debug, error, info, trace};
 use microkv::MicroKV;
+use reqwest::header::HeaderMap;
 use reqwest::{self, Client};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -35,10 +37,11 @@ impl Puller {
         self.retry = self.retry + 1;
     }
 
-    async fn pull(&self, release_tx: Sender<Release>) -> Result<()> {
+    async fn pull(&self, release_tx: Sender<Release>, headers: HeaderMap) -> Result<()> {
         let client = Client::builder()
             .timeout(Duration::from_secs(8))
             .user_agent("masayil")
+            .default_headers(headers)
             .build()?;
         trace!("Build http client complete.");
         let resp = client.get(&self.repo.url).send().await?.text().await?;
@@ -92,6 +95,7 @@ impl Puller {
 }
 
 pub async fn do_watch(
+    token: String,
     period: u64,
     retry_interval: u64,
     repo_list: Vec<Repo>,
@@ -100,6 +104,7 @@ pub async fn do_watch(
     _shutdown_complete_tx_watch: Sender<()>,
     release_tx: Sender<Release>,
 ) {
+    let headers = build_header(token);
     let mut puller_list = PullerList::new();
     for v in repo_list.into_iter() {
         puller_list.push(Puller::new(db.clone(), retry_interval, v, 1));
@@ -110,22 +115,28 @@ pub async fn do_watch(
             _ = notify_shutdown_watch.recv() => {
                 info!("Watch module is stopping.");
             },
-            _ = try_watch(puller_list.clone(),period,release_tx.clone())=>{
+            _ = try_watch(puller_list.clone(),period,release_tx.clone(),headers.clone())=>{
             },
         }
     }
 }
 
-async fn try_watch(puller_list: PullerList, period: u64, release_tx: Sender<Release>) {
+async fn try_watch(
+    puller_list: PullerList,
+    period: u64,
+    release_tx: Sender<Release>,
+    headers: HeaderMap,
+) {
     let mut spawn_queue = Vec::new();
     let semaphore = Arc::new(Semaphore::new(8));
     for mut v in puller_list.into_iter() {
         if semaphore.acquire().await.is_ok() {
             let release_tx = release_tx.clone();
+            let headers = headers.clone();
             let handler = tokio::spawn(async move {
                 loop {
-                    let release_tx = release_tx.clone();
-                    match v.pull(release_tx).await {
+                    // let release_tx = release_tx.clone();
+                    match v.pull(release_tx.clone(), headers.clone()).await {
                         Err(e) => {
                             error!("Pull {} release info failed. Error: {}", v.repo.name, e);
                             if v.retry > RETRY {

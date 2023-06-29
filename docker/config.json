@@ -1,6 +1,7 @@
 {
+    "GithubAuthorizationHeader": "",
     "dbPath": "/app/data",
-    "period": 7200,
+    "period": 4800,
     "retryInterval": 30,
     "alert": {
         "slack": {},

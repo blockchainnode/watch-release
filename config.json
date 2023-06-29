@@ -1,7 +1,8 @@
 {
+    "GithubAuthorizationHeader": "",
     "dbPath": "data",
-    "period": 60,
-    "retryInterval": 10,
+    "period": 4800,
+    "retryInterval": 30,
     "alert": {
         "slack": {},
         "wechat": {}

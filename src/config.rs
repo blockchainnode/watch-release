@@ -8,6 +8,8 @@ use std::path::PathBuf;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct ServerConfig {
+    #[serde(rename = "githubAuthorizationHeader")]
+    pub github_authorization_header: String,
     #[serde(rename = "dbPath")]
     pub db_path: PathBuf,
     //Convert the unit of period to seconds
@@ -31,6 +33,7 @@ impl Default for ServerConfig {
         let mut working_dir = env::current_dir().expect("cannot get the working dir.");
         working_dir.push("data");
         Self {
+            github_authorization_header: String::from(""),
             db_path: working_dir,
             period: 7200,
             retry_interval: 600,

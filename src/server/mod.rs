@@ -4,9 +4,10 @@ use crate::config;
 use crate::shutdown::Shutdown;
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
-use log::info;
+use log::{error, info};
 use microkv::MicroKV;
-use std::path::PathBuf;
+use reqwest::header::{self, HeaderMap};
+use std::{path::PathBuf, process};
 use tokio::sync::mpsc::{self, Sender};
 
 #[derive(Args)]
@@ -63,6 +64,7 @@ pub async fn execute(
 
     let watch = tokio::spawn(async move {
         watch::do_watch(
+            server_config.github_authorization_header,
             server_config.period,
             server_config.retry_interval,
             server_config.repo_list.clone(),
@@ -87,4 +89,25 @@ pub async fn execute(
     let (_, _) = tokio::join!(alert, watch);
 
     Ok(())
+}
+
+fn build_header(token: String) -> HeaderMap {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "X-GitHub-Api-Version",
+        header::HeaderValue::from_static("2022-11-28"),
+    );
+    headers.insert(
+        "Accept",
+        header::HeaderValue::from_static("application/vnd.github+json"),
+    );
+    headers.insert(
+        "Authorization",
+        token.parse().unwrap_or_else(|e| {
+            error!("cannot parse given token to http header value. {}", e);
+            process::exit(3);
+        }),
+    );
+
+    headers
 }
